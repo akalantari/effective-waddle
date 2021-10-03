@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+if [ ! -z "$WWWUSER" ]; then
+    usermod -u $WWWUSER sail
+fi
+
+if [ ! -d /.composer ]; then
+    mkdir /.composer
+fi
+
+chmod -R ugo+rw /.composer
+
+if [ $# -gt 0 ];then
+    exec gosu $WWWUSER "/usr/local/bin/wait-for-it.sh localhost:15672 -- /usr/bin/php /var/www/html/artisan rabbitmq:setup"
+    exec gosu $WWWUSER "$@"
+else
+    /usr/local/bin/wait-for-it.sh localhost:15672 -- /usr/bin/php /var/www/html/artisan rabbitmq:setup
+    /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+fi
